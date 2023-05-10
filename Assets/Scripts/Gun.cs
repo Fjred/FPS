@@ -59,9 +59,9 @@ public class Gun : MonoBehaviour
             hitObject.transform.forward = hit.normal;
             hitObject.transform.position += hit.normal * 0.02f;
 
-            
+            ParticleSystem smoked = Instantiate(smoke, hit.point, Quaternion.identity);
 
-            smoke.Play();
+            smoked.Play();
         }
 
     }
