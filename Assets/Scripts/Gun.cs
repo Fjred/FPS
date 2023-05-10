@@ -7,49 +7,62 @@ public class Gun : MonoBehaviour
 
     public GameObject gunfire;
 
-    public AudioSource gunshotSound;
+    private AudioSource source;
+
+    public AudioClip shootSound;
+
+    public ParticleSystem smoke;
 
     public float maxDistance = 100;
 
-    public float gunfireTime;
-
     private void Start()
     {
+        source = gameObject.AddComponent<AudioSource>();
 
         gunfire.SetActive(false);
     }
     void Update()
     {
 
-        if (Time.time < gunfireTime)
-        {
-            gunfire.SetActive(true);
-        }
-        else
-        {
-            gunfire.SetActive(false);
-        }
-
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
-
-            var ray = new Ray(transform.position, transform.forward);
-
-            if (Physics.Raycast(ray, out var hit, maxDistance))
-            {
-                
-                print(hit.point);
-
-                var hitObject = Instantiate(hitPrefab, hit.point, Quaternion.Euler(0, 0, 0));
-
-                hitObject.transform.forward = hit.normal;
-                hitObject.transform.position += hit.normal * 0.02f;
-
-                gunshotSound.Play();
-
-                gunfireTime = Time.time + 0.1f;
-                
-            }
+            Shoot();
         }
+    }
+
+    void DisableFlashEffect()
+    {
+        gunfire.SetActive(false);
+    }
+
+    void Shoot()
+    {
+        var cam = Camera.main;
+
+        var ray = new Ray(cam.transform.position, cam.transform.forward);
+
+        gunfire.SetActive(true);
+
+        Invoke("DisableFlashEffect", 0.05f);
+
+        source.pitch = Random.Range(0.8f, 1.2f);
+
+        source.PlayOneShot(shootSound);
+
+        if (Physics.Raycast(ray, out var hit, maxDistance))
+        {
+
+            print(hit.point);
+
+            var hitObject = Instantiate(hitPrefab, hit.point, Quaternion.Euler(0, 0, 0));
+
+            hitObject.transform.forward = hit.normal;
+            hitObject.transform.position += hit.normal * 0.02f;
+
+            
+
+            smoke.Play();
+        }
+
     }
 }
