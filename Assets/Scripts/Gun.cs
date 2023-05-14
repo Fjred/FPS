@@ -1,5 +1,7 @@
 
 using UnityEngine;
+using UnityEngine.Events;
+
 
 public class Gun : MonoBehaviour
 {
@@ -14,6 +16,8 @@ public class Gun : MonoBehaviour
     public ParticleSystem smoke;
 
     public float maxDistance = 100;
+
+    public UnityEvent onShoot;
 
     private void Start()
     {
@@ -47,21 +51,34 @@ public class Gun : MonoBehaviour
 
         source.pitch = Random.Range(0.8f, 1.2f);
 
+
         source.PlayOneShot(shootSound);
+        onShoot.Invoke();
 
         if (Physics.Raycast(ray, out var hit, maxDistance))
         {
 
-            print(hit.point);
+            var health = hit.transform.GetComponent<Health>(); //null
+            if (health)
+            {
+                health.Damage();
+            }
 
-            var hitObject = Instantiate(hitPrefab, hit.point, Quaternion.Euler(0, 0, 0));
+            if(!hit.transform.CompareTag("Enemy"))
+            {
+                var hitObject = Instantiate(hitPrefab, hit.point, Quaternion.Euler(0, 0, 0), hit.transform);
 
-            hitObject.transform.forward = hit.normal;
-            hitObject.transform.position += hit.normal * 0.02f;
+                hitObject.transform.forward = hit.normal;
+                hitObject.transform.position += hit.normal * 0.02f;
+                var x = 1f / hit.transform.localScale.x;
+                var y = 1f / hit.transform.localScale.y;
+                var z = 1f / hit.transform.localScale.z;
+                hitObject.transform.localScale = new Vector3(x, y, z);
 
-            ParticleSystem smoked = Instantiate(smoke, hit.point, Quaternion.identity);
+                ParticleSystem smoked = Instantiate(smoke, hit.point, Quaternion.identity);
 
-            smoked.Play();
+                smoked.Play();
+            }
         }
 
     }
