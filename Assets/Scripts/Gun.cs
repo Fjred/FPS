@@ -19,6 +19,17 @@ public class Gun : MonoBehaviour
 
     public UnityEvent onShoot;
 
+
+
+    public int maxAmmo = 30;
+    public int ammo;
+
+    public int recoilAngle = 1;
+
+    public int shotsPerAmmo = 5;
+
+    public int damage = 10;
+
     private void Start()
     {
         source = gameObject.AddComponent<AudioSource>();
@@ -30,7 +41,7 @@ public class Gun : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
-            Shoot();
+            TryShoot();
         }
     }
 
@@ -39,21 +50,38 @@ public class Gun : MonoBehaviour
         gunfire.SetActive(false);
     }
 
-    void Shoot()
+    void TryShoot()
     {
-        var cam = Camera.main;
+        if (ammo <= 0) return;
 
-        var ray = new Ray(cam.transform.position, cam.transform.forward);
+        ammo--;
+
+        onShoot.Invoke();
 
         gunfire.SetActive(true);
-
         Invoke("DisableFlashEffect", 0.05f);
 
         source.pitch = Random.Range(0.8f, 1.2f);
-
-
         source.PlayOneShot(shootSound);
-        onShoot.Invoke();
+
+        for (int i = 0; i < shotsPerAmmo; i++)
+        {
+            Shoot();
+        }
+    }
+
+    void Shoot()
+    {
+
+        var cam = Camera.main;
+
+        var direction = cam.transform.forward;
+
+
+        direction = Quaternion.Euler(Random.Range(-recoilAngle, recoilAngle), Random.Range(-recoilAngle, recoilAngle), 0) * direction;
+
+        var ray = new Ray(cam.transform.position, direction);
+
 
         if (Physics.Raycast(ray, out var hit, maxDistance))
         {
@@ -61,25 +89,20 @@ public class Gun : MonoBehaviour
             var health = hit.transform.GetComponent<Health>(); //null
             if (health)
             {
-                health.Damage();
+                health.Damage(damage);
             }
 
-            if(!hit.transform.CompareTag("Enemy"))
-            {
+            if (!hit.transform.CompareTag("Enemy"))
+            { 
                 var hitObject = Instantiate(hitPrefab, hit.point, Quaternion.Euler(0, 0, 0), hit.transform);
 
                 hitObject.transform.forward = hit.normal;
                 hitObject.transform.position += hit.normal * 0.02f;
-                var x = 1f / hit.transform.localScale.x;
-                var y = 1f / hit.transform.localScale.y;
-                var z = 1f / hit.transform.localScale.z;
-                hitObject.transform.localScale = new Vector3(x, y, z);
 
                 ParticleSystem smoked = Instantiate(smoke, hit.point, Quaternion.identity);
 
                 smoked.Play();
             }
         }
-
     }
 }
